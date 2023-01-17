@@ -118,14 +118,17 @@ def PrintConfiguration(env):  # pylint: disable=too-many-statements
     board_config = env.BoardConfig() if "BOARD" in env else None
 
     def _get_configuration_data():
-        return None if not board_config else [
-            "CONFIGURATION:",
-            "https://docs.platformio.org/page/boards/%s/%s.html" %
-            (platform.name, board_config.id)
-        ]
+        return (
+            [
+                "CONFIGURATION:",
+                f"https://docs.platformio.org/page/boards/{platform.name}/{board_config.id}.html",
+            ]
+            if board_config
+            else None
+        )
 
     def _get_plaform_data():
-        data = ["PLATFORM: %s %s" % (platform.title, platform.version)]
+        data = [f"PLATFORM: {platform.title} {platform.version}"]
         src_manifest_path = platform.pm.get_src_manifest_path(
             platform.get_dir())
         if src_manifest_path:
@@ -133,7 +136,7 @@ def PrintConfiguration(env):  # pylint: disable=too-many-statements
             if "version" in src_manifest:
                 data.append("#" + src_manifest['version'])
             if int(ARGUMENTS.get("PIOVERBOSE", 0)):
-                data.append("(%s)" % src_manifest['url'])
+                data.append(f"({src_manifest['url']})")
         if board_config:
             data.extend([">", board_config.get("name")])
         return data
@@ -151,8 +154,9 @@ def PrintConfiguration(env):  # pylint: disable=too-many-statements
             return data
         ram = board_config.get("upload", {}).get("maximum_ram_size")
         flash = board_config.get("upload", {}).get("maximum_size")
-        data.append("%s RAM, %s Flash" %
-                    (fs.format_filesize(ram), fs.format_filesize(flash)))
+        data.append(
+            f"{fs.format_filesize(ram)} RAM, {fs.format_filesize(flash)} Flash"
+        )
         return data
 
     def _get_debug_data():
@@ -173,9 +177,9 @@ def PrintConfiguration(env):  # pylint: disable=too-many-statements
             else:
                 external.append(key)
         if onboard:
-            data.extend(["On-board", "(%s)" % ", ".join(sorted(onboard))])
+            data.extend(["On-board", f'({", ".join(sorted(onboard))})'])
         if external:
-            data.extend(["External", "(%s)" % ", ".join(sorted(external))])
+            data.extend(["External", f'({", ".join(sorted(external))})'])
         return data
 
     def _get_packages_data():
@@ -188,14 +192,14 @@ def PrintConfiguration(env):  # pylint: disable=too-many-statements
                 continue
             manifest = platform.pm.load_manifest(pkg_dir)
             original_version = util.get_original_version(manifest['version'])
-            info = "%s %s" % (manifest['name'], manifest['version'])
+            info = f"{manifest['name']} {manifest['version']}"
             extra = []
             if original_version:
                 extra.append(original_version)
             if "__src_url" in manifest and int(ARGUMENTS.get("PIOVERBOSE", 0)):
                 extra.append(manifest['__src_url'])
             if extra:
-                info += " (%s)" % ", ".join(extra)
+                info += f' ({", ".join(extra)})'
             data.append(info)
         return ["PACKAGES:", ", ".join(data)]
 

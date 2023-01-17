@@ -43,7 +43,7 @@ def validate_path(ctx, param, value):  # pylint: disable=unused-argument
         assert invalid_path is None
         return value
     except AssertionError:
-        raise click.BadParameter("Found invalid path: %s" % invalid_path)
+        raise click.BadParameter(f"Found invalid path: {invalid_path}")
 
 
 @click.command("ci", short_help="Continuous Integration")

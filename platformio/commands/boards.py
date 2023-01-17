@@ -66,7 +66,7 @@ def _print_boards_json(query, installed=False):
     result = []
     for board in _get_boards(installed):
         if query:
-            search_data = "%s %s" % (board['id'], json.dumps(board).lower())
+            search_data = f"{board['id']} {json.dumps(board).lower()}"
             if query.lower() not in search_data.lower():
                 continue
         result.append(board)

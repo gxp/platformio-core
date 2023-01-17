@@ -40,11 +40,13 @@ PIOPLUS_AUTO_UPDATES_MAX = 100
 class CorePackageManager(PackageManager):
 
     def __init__(self):
-        super(CorePackageManager, self).__init__(get_project_packages_dir(), [
-            "https://dl.bintray.com/platformio/dl-packages/manifest.json",
-            "http%s://dl.platformio.org/packages/manifest.json" %
-            ("" if sys.version_info < (2, 7, 9) else "s")
-        ])
+        super(CorePackageManager, self).__init__(
+            get_project_packages_dir(),
+            [
+                "https://dl.bintray.com/platformio/dl-packages/manifest.json",
+                f'http{"" if sys.version_info < (2, 7, 9) else "s"}://dl.platformio.org/packages/manifest.json',
+            ],
+        )
 
     def install(  # pylint: disable=keyword-arg-before-vararg
             self,
@@ -65,10 +67,8 @@ class CorePackageManager(PackageManager):
         self.cache_reset()
         best_pkg_versions = {}
         for name, requirements in CORE_PACKAGES.items():
-            pkg_dir = self.get_package_dir(name, requirements)
-            if not pkg_dir:
-                continue
-            best_pkg_versions[name] = self.load_manifest(pkg_dir)['version']
+            if pkg_dir := self.get_package_dir(name, requirements):
+                best_pkg_versions[name] = self.load_manifest(pkg_dir)['version']
         for manifest in self.get_installed():
             if manifest['name'] not in best_pkg_versions:
                 continue
@@ -83,8 +83,7 @@ def get_core_package_dir(name):
         raise exception.PlatformioException("Please upgrade PIO Core")
     requirements = CORE_PACKAGES[name]
     pm = CorePackageManager()
-    pkg_dir = pm.get_package_dir(name, requirements)
-    if pkg_dir:
+    if pkg_dir := pm.get_package_dir(name, requirements):
         return pkg_dir
     return pm.install(name, requirements)
 

@@ -109,10 +109,7 @@ class PlatformManager(BasePkgManager):
 
         # don't cleanup packages or install them after update
         # we check packages for updates in def update()
-        if after_update:
-            return True
-
-        return self.cleanup_packages(list(p.packages))
+        return True if after_update else self.cleanup_packages(list(p.packages))
 
     def update(  # pylint: disable=arguments-differ
             self,
@@ -189,10 +186,10 @@ class PlatformManager(BasePkgManager):
 
     def get_all_boards(self):
         boards = self.get_installed_boards()
-        know_boards = ["%s:%s" % (b['platform'], b['id']) for b in boards]
+        know_boards = [f"{b['platform']}:{b['id']}" for b in boards]
         try:
             for board in self.get_registered_boards():
-                key = "%s:%s" % (board['platform'], board['id'])
+                key = f"{board['platform']}:{board['id']}"
                 if key not in know_boards:
                     boards.append(board)
         except (exception.APIRequestError, exception.InternetIsOffline):
@@ -216,14 +213,13 @@ class PlatformFactory(object):
     @staticmethod
     def get_clsname(name):
         name = re.sub(r"[^\da-z\_]+", "", name, flags=re.I)
-        return "%s%sPlatform" % (name.upper()[0], name.lower()[1:])
+        return f"{name.upper()[0]}{name.lower()[1:]}Platform"
 
     @staticmethod
     def load_module(name, path):
         module = None
         try:
-            module = load_source("platformio.managers.platform.%s" % name,
-                                 path)
+            module = load_source(f"platformio.managers.platform.{name}", path)
         except ImportError:
             raise exception.UnknownPlatform(name)
         return module
@@ -246,7 +242,8 @@ class PlatformFactory(object):
 
         if not platform_dir:
             raise exception.UnknownPlatform(
-                name if not requirements else "%s@%s" % (name, requirements))
+                f"{name}@{requirements}" if requirements else name
+            )
 
         platform_cls = None
         if isfile(join(platform_dir, "platform.py")):
@@ -286,9 +283,7 @@ class PlatformPackagesMixin(object):
             elif (name in with_packages or
                   not (skip_default_package or opts.get("optional", False))):
                 if ":" in version:
-                    self.pm.install("%s=%s" % (name, version),
-                                    silent=silent,
-                                    force=force)
+                    self.pm.install(f"{name}={version}", silent=silent, force=force)
                 else:
                     self.pm.install(name, version, silent=silent, force=force)
 
@@ -325,8 +320,7 @@ class PlatformPackagesMixin(object):
     def get_installed_packages(self):
         items = {}
         for name in self.packages:
-            pkg_dir = self.get_package_dir(name)
-            if pkg_dir:
+            if pkg_dir := self.get_package_dir(name):
                 items[name] = self.pm.load_manifest(pkg_dir)
         return items
 
@@ -342,15 +336,12 @@ class PlatformPackagesMixin(object):
     def get_package_dir(self, name):
         version = self.packages[name].get("version", "")
         if ":" in version:
-            return self.pm.get_package_dir(
-                *self.pm.parse_pkg_uri("%s=%s" % (name, version)))
+            return self.pm.get_package_dir(*self.pm.parse_pkg_uri(f"{name}={version}"))
         return self.pm.get_package_dir(name, version)
 
     def get_package_version(self, name):
         pkg_dir = self.get_package_dir(name)
-        if not pkg_dir:
-            return None
-        return self.pm.load_manifest(pkg_dir).get("version")
+        return self.pm.load_manifest(pkg_dir).get("version") if pkg_dir else None
 
 
 class PlatformRunMixin(object):
@@ -414,7 +405,7 @@ class PlatformRunMixin(object):
 
         # encode and append variables
         for key, value in variables.items():
-            args.append("%s=%s" % (key.upper(), self.encode_scons_arg(value)))
+            args.append(f"{key.upper()}={self.encode_scons_arg(value)}")
 
         def _write_and_flush(stream, data):
             try:
@@ -585,10 +576,7 @@ class PlatformBase(  # pylint: disable=too-many-public-methods
         raise NotImplementedError()
 
     def is_embedded(self):
-        for opts in self.packages.values():
-            if opts.get("type") == "uploader":
-                return True
-        return False
+        return any(opts.get("type") == "uploader" for opts in self.packages.values())
 
     def get_boards(self, id_=None):
 
@@ -597,7 +585,7 @@ class PlatformBase(  # pylint: disable=too-many-public-methods
             if "platform" in config and config.get("platform") != self.name:
                 return
             if "platforms" in config \
-                    and self.name not in config.get("platforms"):
+                        and self.name not in config.get("platforms"):
                 return
             config.manifest['platform'] = self.name
             self._BOARDS_CACHE[board_id] = config
@@ -622,7 +610,7 @@ class PlatformBase(  # pylint: disable=too-many-public-methods
                 for boards_dir in bdirs:
                     if not isdir(boards_dir):
                         continue
-                    manifest_path = join(boards_dir, "%s.json" % id_)
+                    manifest_path = join(boards_dir, f"{id_}.json")
                     if isfile(manifest_path):
                         _append_board(id_, manifest_path)
                         break
@@ -647,8 +635,7 @@ class PlatformBase(  # pylint: disable=too-many-public-methods
             framework = framework.lower().strip()
             if not framework or framework not in self.frameworks:
                 continue
-            _pkg_name = self.frameworks[framework].get("package")
-            if _pkg_name:
+            if _pkg_name := self.frameworks[framework].get("package"):
                 self.packages[_pkg_name]['optional'] = False
 
         # enable upload tools for upload targets
@@ -678,10 +665,9 @@ class PlatformBase(  # pylint: disable=too-many-public-methods
                 libcore_dir = join(libcores_dir, item)
                 if not isdir(libcore_dir):
                     continue
-                storages.append({
-                    "name": "%s-core-%s" % (opts['package'], item),
-                    "path": libcore_dir
-                })
+                storages.append(
+                    {"name": f"{opts['package']}-core-{item}", "path": libcore_dir}
+                )
 
         return storages
 
@@ -696,7 +682,7 @@ class PlatformBoardConfig(object):
             self._manifest = fs.load_json(manifest_path)
         except ValueError:
             raise exception.InvalidBoardManifest(manifest_path)
-        if not set(["name", "url", "vendor"]) <= set(self._manifest):
+        if not {"name", "url", "vendor"} <= set(self._manifest):
             raise exception.PlatformioException(
                 "Please specify name, url and vendor fields for " +
                 manifest_path)
@@ -719,15 +705,12 @@ class PlatformBoardConfig(object):
         except KeyError:
             if default is not None:
                 return default
-        raise KeyError("Invalid board option '%s'" % path)
+        raise KeyError(f"Invalid board option '{path}'")
 
     def update(self, path, value):
         newdict = None
         for key in path.split(".")[::-1]:
-            if newdict is None:
-                newdict = {key: value}
-            else:
-                newdict = {key: newdict}
+            newdict = {key: value} if newdict is None else {key: newdict}
         util.merge_dicts(self._manifest, newdict)
 
     def __contains__(self, key):
@@ -784,12 +767,14 @@ class PlatformBoardConfig(object):
     def get_debug_data(self):
         if not self._manifest.get("debug", {}).get("tools"):
             return None
-        tools = {}
-        for name, options in self._manifest['debug']['tools'].items():
-            tools[name] = {}
-            for key, value in options.items():
-                if key in ("default", "onboard"):
-                    tools[name][key] = value
+        tools = {
+            name: {
+                key: value
+                for key, value in options.items()
+                if key in ("default", "onboard")
+            }
+            for name, options in self._manifest['debug']['tools'].items()
+        }
         return {"tools": tools}
 
     def get_debug_tool_name(self, custom=None):
@@ -803,8 +788,8 @@ class PlatformBoardConfig(object):
             if tool_name in debug_tools:
                 return tool_name
             raise exception.DebugInvalidOptions(
-                "Unknown debug tool `%s`. Please use one of `%s` or `custom`" %
-                (tool_name, ", ".join(sorted(list(debug_tools)))))
+                f'Unknown debug tool `{tool_name}`. Please use one of `{", ".join(sorted(list(debug_tools)))}` or `custom`'
+            )
 
         # automatically select best tool
         data = {"default": [], "onboard": [], "external": []}
@@ -815,9 +800,8 @@ class PlatformBoardConfig(object):
                 data['onboard'].append(key)
             data['external'].append(key)
 
-        for key, value in data.items():
-            if not value:
-                continue
-            return sorted(value)[0]
+        for value in data.values():
+            if value:
+                return sorted(value)[0]
 
-        assert any(item for item in data)
+        assert any(data)

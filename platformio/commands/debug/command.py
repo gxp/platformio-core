@@ -68,7 +68,7 @@ def cli(ctx, project_dir, project_conf, environment, verbose, interface,
 
         env_name = environment or helpers.get_default_debug_env(config)
         env_options = config.items(env=env_name, as_dict=True)
-        if not set(env_options.keys()) >= set(["platform", "board"]):
+        if not set(env_options.keys()) >= {"platform", "board"}:
             raise exception.ProjectEnvsNotAvailable()
         debug_options = helpers.validate_debug_options(ctx, env_options)
         assert debug_options

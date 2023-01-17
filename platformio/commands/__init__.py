@@ -52,13 +52,12 @@ class PlatformioCLI(click.MultiCommand):
     def get_command(self, ctx, cmd_name):
         mod = None
         try:
-            mod = __import__("platformio.commands." + cmd_name, None, None,
-                             ["cli"])
+            mod = __import__(f"platformio.commands.{cmd_name}", None, None, ["cli"])
         except ImportError:
             try:
                 return self._handle_obsolate_command(cmd_name)
             except AttributeError:
-                raise click.UsageError('No such command "%s"' % cmd_name, ctx)
+                raise click.UsageError(f'No such command "{cmd_name}"', ctx)
         return mod.cli
 
     @staticmethod

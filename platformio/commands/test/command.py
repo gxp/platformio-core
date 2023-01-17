@@ -94,24 +94,25 @@ def cli(  # pylint: disable=redefined-builtin
         for testname in test_names:
 
             for envname in config.envs():
-                section = "env:%s" % envname
+                section = f"env:{envname}"
 
                 # filter and ignore patterns
                 patterns = dict(filter=list(filter), ignore=list(ignore))
                 for key in patterns:
-                    patterns[key].extend(
-                        config.get(section, "test_%s" % key, []))
+                    patterns[key].extend(config.get(section, f"test_{key}", []))
 
                 skip_conditions = [
                     environment and envname not in environment,
-                    not environment and default_envs
+                    not environment
+                    and default_envs
                     and envname not in default_envs,
-                    testname != "*" and patterns['filter'] and
-                    not any([fnmatch(testname, p)
-                             for p in patterns['filter']]),
                     testname != "*"
-                    and any([fnmatch(testname, p)
-                             for p in patterns['ignore']]),
+                    and patterns['filter']
+                    and not any(
+                        fnmatch(testname, p) for p in patterns['filter']
+                    ),
+                    testname != "*"
+                    and any(fnmatch(testname, p) for p in patterns['ignore']),
                 ]
                 if any(skip_conditions):
                     results.append({"env": envname, "test": testname})
@@ -158,13 +159,11 @@ def cli(  # pylint: disable=redefined-builtin
 
 
 def get_test_names(test_dir):
-    names = []
-    for item in sorted(listdir(test_dir)):
-        if isdir(join(test_dir, item)):
-            names.append(item)
-    if not names:
-        names = ["*"]
-    return names
+    return [
+        item
+        for item in sorted(listdir(test_dir))
+        if isdir(join(test_dir, item))
+    ] or ["*"]
 
 
 def print_processing_header(test, env):

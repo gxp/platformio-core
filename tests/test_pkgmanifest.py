@@ -29,9 +29,7 @@ def test_packages():
     assert isinstance(pkgs_manifest, dict)
     items = []
     for _, variants in pkgs_manifest.items():
-        for item in variants:
-            items.append(item)
-
+        items.extend(iter(variants))
     for item in items:
         assert item['url'].endswith(".tar.gz"), item
 
@@ -41,4 +39,4 @@ def test_packages():
         if "X-Checksum-Sha1" not in r.headers:
             return pytest.skip("X-Checksum-Sha1 is not provided")
 
-        assert item['sha1'] == r.headers.get("X-Checksum-Sha1")[0:40], item
+        assert item['sha1'] == r.headers.get("X-Checksum-Sha1")[:40], item

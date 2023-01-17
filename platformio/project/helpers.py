@@ -41,9 +41,7 @@ def find_project_dir_above(path):
         path = dirname(path)
     if is_platformio_project(path):
         return path
-    if isdir(dirname(path)):
-        return find_project_dir_above(dirname(path))
-    return None
+    return find_project_dir_above(dirname(path)) if isdir(dirname(path)) else None
 
 
 def get_project_optional_dir(name, default=None):
@@ -80,12 +78,11 @@ def get_project_core_dir():
         try:
             os.makedirs(core_dir)
         except OSError as e:
-            if win_core_dir:
-                os.makedirs(win_core_dir)
-                core_dir = win_core_dir
-            else:
+            if not win_core_dir:
                 raise e
 
+            os.makedirs(win_core_dir)
+            core_dir = win_core_dir
     assert isdir(core_dir)
     return core_dir
 

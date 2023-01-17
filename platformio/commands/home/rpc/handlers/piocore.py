@@ -149,7 +149,7 @@ class PIOCoreRPC(object):
         try:
             return json.loads(out)
         except ValueError as e:
-            click.secho("%s => `%s`" % (e, out), fg="red", err=True)
+            click.secho(f"{e} => `{out}`", fg="red", err=True)
             # if PIO Core prints unhandled warnings
             for line in out.split("\n"):
                 line = line.strip()

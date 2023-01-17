@@ -44,9 +44,12 @@ class DebugServer(BaseProcess):
             return None
         if server['cwd']:
             server_executable = join(server['cwd'], server_executable)
-        if ("windows" in systype and not server_executable.endswith(".exe")
-                and isfile(server_executable + ".exe")):
-            server_executable = server_executable + ".exe"
+        if (
+            "windows" in systype
+            and not server_executable.endswith(".exe")
+            and isfile(f"{server_executable}.exe")
+        ):
+            server_executable = f"{server_executable}.exe"
 
         if not isfile(server_executable):
             server_executable = where_is_program(server_executable)
@@ -72,8 +75,9 @@ class DebugServer(BaseProcess):
             ])
             args.extend(server['arguments'])
             str_args = " ".join(
-                [arg if arg.startswith("-") else '"%s"' % arg for arg in args])
-            self._debug_port = '| "%s" %s' % (server_executable, str_args)
+                [arg if arg.startswith("-") else f'"{arg}"' for arg in args]
+            )
+            self._debug_port = f'| "{server_executable}" {str_args}'
             self._debug_port = fs.to_unix_path(self._debug_port)
         else:
             env = os.environ.copy()
@@ -84,13 +88,12 @@ class DebugServer(BaseProcess):
                           if "darwin" in systype else "LD_LIBRARY_PATH")
                 env[ld_key] = join(server['cwd'], "lib")
                 if os.environ.get(ld_key):
-                    env[ld_key] = "%s:%s" % (env[ld_key],
-                                             os.environ.get(ld_key))
+                    env[ld_key] = f"{env[ld_key]}:{os.environ.get(ld_key)}"
             # prepend BIN to PATH
             if server['cwd'] and isdir(join(server['cwd'], "bin")):
-                env['PATH'] = "%s%s%s" % (
-                    join(server['cwd'], "bin"), os.pathsep,
-                    os.environ.get("PATH", os.environ.get("Path", "")))
+                env[
+                    'PATH'
+                ] = f"""{join(server['cwd'], "bin")}{os.pathsep}{os.environ.get("PATH", os.environ.get("Path", ""))}"""
 
             self._transport = reactor.spawnProcess(
                 self,

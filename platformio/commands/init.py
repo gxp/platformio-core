@@ -78,7 +78,7 @@ def cli(
             click.secho("\nThe current working directory",
                         fg="yellow",
                         nl=False)
-            click.secho(" %s " % project_dir, fg="cyan", nl=False)
+            click.secho(f" {project_dir} ", fg="cyan", nl=False)
             click.secho("will be used for the project.", fg="yellow")
             click.echo("")
 
@@ -366,9 +366,7 @@ def fill_project_envs(ctx, project_dir, board_ids, project_option, env_prefix,
         modified = True
 
         envopts = {"platform": board_config['platform'], "board": id_}
-        # find default framework for board
-        frameworks = board_config.get("frameworks")
-        if frameworks:
+        if frameworks := board_config.get("frameworks"):
             envopts['framework'] = frameworks[0]
 
         for item in project_option:
@@ -377,7 +375,7 @@ def fill_project_envs(ctx, project_dir, board_ids, project_option, env_prefix,
             _name, _value = item.split("=", 1)
             envopts[_name.strip()] = _value.strip()
 
-        section = "env:%s%s" % (env_prefix, id_)
+        section = f"env:{env_prefix}{id_}"
         config.add_section(section)
 
         for option, value in envopts.items():

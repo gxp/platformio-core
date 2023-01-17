@@ -26,5 +26,6 @@ def test_local_env():
     ])
     if result['returncode'] != 1:
         pytest.fail(result)
-    assert all([s in result['err']
-                for s in ("PASSED", "IGNORED", "FAILED")]), result['out']
+    assert all(
+        s in result['err'] for s in ("PASSED", "IGNORED", "FAILED")
+    ), result['out']

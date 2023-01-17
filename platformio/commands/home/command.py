@@ -89,16 +89,20 @@ def cli(port, host, no_open):
         else:
             reactor.callLater(1, lambda: click.launch(home_url))
 
-    click.echo("\n".join([
-        "",
-        "  ___I_",
-        " /\\-_--\\   PlatformIO Home",
-        "/  \\_-__\\",
-        "|[]| [] |  %s" % home_url,
-        "|__|____|______________%s" % ("_" * len(host)),
-    ]))
+    click.echo(
+        "\n".join(
+            [
+                "",
+                "  ___I_",
+                " /\\-_--\\   PlatformIO Home",
+                "/  \\_-__\\",
+                f"|[]| [] |  {home_url}",
+                f'|__|____|______________{"_" * len(host)}',
+            ]
+        )
+    )
     click.echo("")
-    click.echo("Open PIO Home in your browser by this URL => %s" % home_url)
+    click.echo(f"Open PIO Home in your browser by this URL => {home_url}")
 
     if already_started:
         return

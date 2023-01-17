@@ -72,7 +72,7 @@ class FileDownloader(object):
         f = open(self._destination, "wb")
         try:
             if not with_progress or self.get_size() == -1:
-                click.echo("%s..." % label)
+                click.echo(f"{label}...")
                 for chunk in itercontent:
                     if chunk:
                         f.write(chunk)

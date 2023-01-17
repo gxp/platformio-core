@@ -42,11 +42,10 @@ class VCSClientFactory(object):
         if "#" in remote_url:
             remote_url, tag = remote_url.rsplit("#", 1)
         if not type_:
-            raise PlatformioException("VCS: Unknown repository type %s" %
-                                      remote_url)
-        obj = getattr(modules[__name__],
-                      "%sClient" % type_.title())(src_dir, remote_url, tag,
-                                                  silent)
+            raise PlatformioException(f"VCS: Unknown repository type {remote_url}")
+        obj = getattr(modules[__name__], f"{type_.title()}Client")(
+            src_dir, remote_url, tag, silent
+        )
         assert isinstance(obj, VCSClientBase)
         return obj
 
@@ -71,13 +70,13 @@ class VCSClientBase(object):
                 assert self.run_cmd(["--version"])
         except (AssertionError, OSError, PlatformioException):
             raise UserSideException(
-                "VCS: `%s` client is not installed in your system" %
-                self.command)
+                f"VCS: `{self.command}` client is not installed in your system"
+            )
         return True
 
     @property
     def storage_dir(self):
-        return join(self.src_dir, "." + self.command)
+        return join(self.src_dir, f".{self.command}")
 
     def export(self):
         raise NotImplementedError
@@ -103,8 +102,7 @@ class VCSClientBase(object):
             check_call(args, **kwargs)
             return True
         except CalledProcessError as e:
-            raise PlatformioException("VCS: Could not process command %s" %
-                                      e.cmd)
+            raise PlatformioException(f"VCS: Could not process command {e.cmd}")
 
     def get_cmd_output(self, args, **kwargs):
         args = [self.command] + args
@@ -114,8 +112,8 @@ class VCSClientBase(object):
         if result['returncode'] == 0:
             return result['out'].strip()
         raise PlatformioException(
-            "VCS: Could not receive an output from `%s` command (%s)" %
-            (args, result))
+            f"VCS: Could not receive an output from `{args}` command ({result})"
+        )
 
 
 class GitClient(VCSClientBase):
@@ -165,9 +163,7 @@ class GitClient(VCSClientBase):
                 args += ["--branch", self.tag]
         args += [self.remote_url, self.src_dir]
         assert self.run_cmd(args)
-        if is_commit:
-            return self.run_cmd(["reset", "--hard", self.tag])
-        return True
+        return self.run_cmd(["reset", "--hard", self.tag]) if is_commit else True
 
     def update(self):
         args = ["pull", "--recurse-submodules"]
@@ -184,7 +180,7 @@ class GitClient(VCSClientBase):
             return self.get_current_revision()
         result = self.get_cmd_output(["ls-remote"])
         for line in result.split("\n"):
-            ref_pos = line.strip().find("refs/heads/" + branch)
+            ref_pos = line.strip().find(f"refs/heads/{branch}")
             if ref_pos > 0:
                 return line[:ref_pos].strip()[:7]
         return None
@@ -209,9 +205,11 @@ class HgClient(VCSClientBase):
         return self.get_cmd_output(["identify", "--id"])
 
     def get_latest_revision(self):
-        if not self.can_be_updated:
-            return self.get_latest_revision()
-        return self.get_cmd_output(["identify", "--id", self.remote_url])
+        return (
+            self.get_cmd_output(["identify", "--id", self.remote_url])
+            if self.can_be_updated
+            else self.get_latest_revision()
+        )
 
 
 class SvnClient(VCSClientBase):

@@ -78,8 +78,11 @@ def ensure_udev_rules():
     from platformio.util import get_systype
 
     def _rules_to_set(rules_path):
-        return set(l.strip() for l in get_file_contents(rules_path).split("\n")
-                   if l.strip() and not l.startswith("#"))
+        return {
+            l.strip()
+            for l in get_file_contents(rules_path).split("\n")
+            if l.strip() and not l.startswith("#")
+        }
 
     if "linux" not in get_systype():
         return None
@@ -110,10 +113,7 @@ def ensure_udev_rules():
 def path_endswith_ext(path, extensions):
     if not isinstance(extensions, (list, tuple)):
         extensions = [extensions]
-    for ext in extensions:
-        if path.endswith("." + ext):
-            return True
-    return False
+    return any(path.endswith(f".{ext}") for ext in extensions)
 
 
 def match_src_files(src_dir, src_filter=None, src_exts=None):
@@ -147,9 +147,7 @@ def match_src_files(src_dir, src_filter=None, src_exts=None):
 
 
 def to_unix_path(path):
-    if not WINDOWS or not path:
-        return path
-    return re.sub(r"[\\]+", "/", path)
+    return path if not WINDOWS or not path else re.sub(r"[\\]+", "/", path)
 
 
 def rmtree(path):

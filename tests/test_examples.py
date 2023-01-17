@@ -28,10 +28,7 @@ from platformio.project.helpers import get_project_build_dir
 def pytest_generate_tests(metafunc):
     if "pioproject_dir" not in metafunc.fixturenames:
         return
-    examples_dirs = []
-
-    # repo examples
-    examples_dirs.append(normpath(join(dirname(__file__), "..", "examples")))
+    examples_dirs = [normpath(join(dirname(__file__), "..", "examples"))]
 
     # dev/platforms
     for manifest in PlatformManager().get_installed():
@@ -94,7 +91,7 @@ def test_run(pioproject_dir):
             # check .hex or .bin files
             firmwares = []
             for ext in ("bin", "hex"):
-                firmwares += glob(join(build_dir, item, "firmware*.%s" % ext))
+                firmwares += glob(join(build_dir, item, f"firmware*.{ext}"))
             if not firmwares:
                 pytest.fail("Missed firmware file")
             for firmware in firmwares:

@@ -44,20 +44,18 @@ class LockFile(object):
     def __init__(self, path, timeout=LOCKFILE_TIMEOUT, delay=LOCKFILE_DELAY):
         self.timeout = timeout
         self.delay = delay
-        self._lock_path = abspath(path) + ".lock"
+        self._lock_path = f"{abspath(path)}.lock"
         self._fp = None
 
     def _lock(self):
         if not LOCKFILE_CURRENT_INTERFACE and exists(self._lock_path):
-            # remove stale lock
-            if time() - getmtime(self._lock_path) > 10:
-                try:
-                    remove(self._lock_path)
-                except:  # pylint: disable=bare-except
-                    pass
-            else:
+            if time() - getmtime(self._lock_path) <= 10:
                 raise LockFileExists
 
+            try:
+                remove(self._lock_path)
+            except:  # pylint: disable=bare-except
+                pass
         self._fp = open(self._lock_path, "w")
         try:
             if LOCKFILE_CURRENT_INTERFACE == LOCKFILE_INTERFACE_FCNTL:

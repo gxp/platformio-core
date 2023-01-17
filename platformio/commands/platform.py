@@ -36,15 +36,14 @@ def _print_platforms(platforms):
         click.echo(platform['description'])
         click.echo()
         if "homepage" in platform:
-            click.echo("Home: %s" % platform['homepage'])
+            click.echo(f"Home: {platform['homepage']}")
         if "frameworks" in platform and platform['frameworks']:
-            click.echo("Frameworks: %s" % ", ".join(platform['frameworks']))
+            click.echo(f"""Frameworks: {", ".join(platform['frameworks'])}""")
         if "packages" in platform:
-            click.echo("Packages: %s" % ", ".join(platform['packages']))
+            click.echo(f"""Packages: {", ".join(platform['packages'])}""")
         if "version" in platform:
             if "__src_url" in platform:
-                click.echo("Version: #%s (%s)" %
-                           (platform['version'], platform['__src_url']))
+                click.echo(f"Version: #{platform['version']} ({platform['__src_url']})")
             else:
                 click.echo("Version: " + platform['version'])
         click.echo()
@@ -122,12 +121,9 @@ def _get_registry_platform_data(  # pylint: disable=unused-argument
         platform,
         with_boards=True,
         expose_packages=True):
-    _data = None
-    for p in _get_registry_platforms():
-        if p['name'] == platform:
-            _data = p
-            break
-
+    _data = next(
+        (p for p in _get_registry_platforms() if p['name'] == platform), None
+    )
     if not _data:
         return None
 
@@ -203,14 +199,13 @@ def platform_frameworks(query, json_output):
 @cli.command("list", short_help="List installed development platforms")
 @click.option("--json-output", is_flag=True)
 def platform_list(json_output):
-    platforms = []
     pm = PlatformManager()
-    for manifest in pm.get_installed():
-        platforms.append(
-            _get_installed_platform_data(manifest['__pkg_dir'],
-                                         with_boards=False,
-                                         expose_packages=False))
-
+    platforms = [
+        _get_installed_platform_data(
+            manifest['__pkg_dir'], with_boards=False, expose_packages=False
+        )
+        for manifest in pm.get_installed()
+    ]
     platforms = sorted(platforms, key=lambda manifest: manifest['name'])
     if json_output:
         click.echo(dump_json_to_unicode(platforms))
@@ -235,23 +230,23 @@ def platform_show(platform, json_output):  # pylint: disable=too-many-branches
     click.echo(data['description'])
     click.echo()
     if "version" in data:
-        click.echo("Version: %s" % data['version'])
+        click.echo(f"Version: {data['version']}")
     if data['homepage']:
-        click.echo("Home: %s" % data['homepage'])
+        click.echo(f"Home: {data['homepage']}")
     if data['repository']:
-        click.echo("Repository: %s" % data['repository'])
+        click.echo(f"Repository: {data['repository']}")
     if data['url']:
-        click.echo("Vendor: %s" % data['url'])
+        click.echo(f"Vendor: {data['url']}")
     if data['license']:
-        click.echo("License: %s" % data['license'])
+        click.echo(f"License: {data['license']}")
     if data['frameworks']:
-        click.echo("Frameworks: %s" % ", ".join(data['frameworks']))
+        click.echo(f"""Frameworks: {", ".join(data['frameworks'])}""")
 
     if not data['packages']:
         return None
 
     if not isinstance(data['packages'][0], dict):
-        click.echo("Packages: %s" % ", ".join(data['packages']))
+        click.echo(f"""Packages: {", ".join(data['packages'])}""")
     else:
         click.echo()
         click.secho("Packages", bold=True)
@@ -261,16 +256,15 @@ def platform_show(platform, json_output):  # pylint: disable=too-many-branches
             click.echo("Package %s" % click.style(item['name'], fg="yellow"))
             click.echo("-" * (8 + len(item['name'])))
             if item['type']:
-                click.echo("Type: %s" % item['type'])
-            click.echo("Requirements: %s" % item['requirements'])
-            click.echo("Installed: %s" %
-                       ("Yes" if item.get("version") else "No (optional)"))
+                click.echo(f"Type: {item['type']}")
+            click.echo(f"Requirements: {item['requirements']}")
+            click.echo(f'Installed: {"Yes" if item.get("version") else "No (optional)"}')
             if "version" in item:
-                click.echo("Version: %s" % item['version'])
+                click.echo(f"Version: {item['version']}")
             if "originalVersion" in item:
-                click.echo("Original version: %s" % item['originalVersion'])
+                click.echo(f"Original version: {item['originalVersion']}")
             if "description" in item:
-                click.echo("Description: %s" % item['description'])
+                click.echo(f"Description: {item['description']}")
 
     if data['boards']:
         click.echo()

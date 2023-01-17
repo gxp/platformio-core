@@ -22,9 +22,7 @@ from platformio.compat import string_types
 def format_value(raw):
     if isinstance(raw, bool):
         return "Yes" if raw else "No"
-    if isinstance(raw, string_types):
-        return raw
-    return str(raw)
+    return raw if isinstance(raw, string_types) else str(raw)
 
 
 @click.group(short_help="Manage PlatformIO settings")

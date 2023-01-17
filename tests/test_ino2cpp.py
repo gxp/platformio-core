@@ -23,10 +23,11 @@ INOTEST_DIR = normpath(join(dirname(__file__), "ino2cpp"))
 def pytest_generate_tests(metafunc):
     if "piotest_dir" not in metafunc.fixturenames:
         return
-    test_dirs = []
-    for name in listdir(INOTEST_DIR):
-        if isdir(join(INOTEST_DIR, name)):
-            test_dirs.append(join(INOTEST_DIR, name))
+    test_dirs = [
+        join(INOTEST_DIR, name)
+        for name in listdir(INOTEST_DIR)
+        if isdir(join(INOTEST_DIR, name))
+    ]
     test_dirs.sort()
     metafunc.parametrize("piotest_dir", test_dirs)
 

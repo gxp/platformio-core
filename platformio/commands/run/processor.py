@@ -50,8 +50,8 @@ class EnvironmentProcessor(object):
 
     def get_build_targets(self):
         if self.targets:
-            return [t for t in self.targets]
-        return self.config.get("env:" + self.name, "targets", [])
+            return list(self.targets)
+        return self.config.get(f"env:{self.name}", "targets", [])
 
     def process(self):
         if "platform" not in self.options:

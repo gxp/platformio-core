@@ -53,7 +53,7 @@ def test_init_duplicated_boards(clirunner, validate_cliresult, tmpdir):
             validate_pioproject(str(tmpdir))
         config = ProjectConfig(join(getcwd(), "platformio.ini"))
         config.validate()
-        assert set(config.sections()) == set(["env:uno"])
+        assert set(config.sections()) == {"env:uno"}
 
 
 def test_init_ide_without_board(clirunner, tmpdir):
@@ -69,10 +69,10 @@ def test_init_ide_atom(clirunner, validate_cliresult, tmpdir):
             cmd_init, ["--ide", "atom", "-b", "uno", "-b", "teensy31"])
         validate_cliresult(result)
         validate_pioproject(str(tmpdir))
-        assert all([
+        assert all(
             tmpdir.join(f).check()
             for f in (".clang_complete", ".gcc-flags.json")
-        ])
+        )
         assert "arduinoavr" in tmpdir.join(".clang_complete").read()
 
         # switch to NodeMCU
@@ -94,7 +94,7 @@ def test_init_ide_eclipse(clirunner, validate_cliresult):
         result = clirunner.invoke(cmd_init, ["-b", "uno", "--ide", "eclipse"])
         validate_cliresult(result)
         validate_pioproject(getcwd())
-        assert all([isfile(f) for f in (".cproject", ".project")])
+        assert all(isfile(f) for f in (".cproject", ".project"))
 
 
 def test_init_special_board(clirunner, validate_cliresult):
