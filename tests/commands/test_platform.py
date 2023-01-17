@@ -78,14 +78,13 @@ def test_list_json_output(clirunner, validate_cliresult):
     assert isinstance(list_result, list)
     assert list_result
     platforms = [item['name'] for item in list_result]
-    assert set(["atmelavr", "espressif8266"]) == set(platforms)
+    assert {"atmelavr", "espressif8266"} == set(platforms)
 
 
 def test_list_raw_output(clirunner, validate_cliresult):
     result = clirunner.invoke(cli_platform.platform_list)
     validate_cliresult(result)
-    assert all(
-        [s in result.output for s in ("atmelavr", "espressif8266")])
+    assert all(s in result.output for s in ("atmelavr", "espressif8266"))
 
 
 def test_update_check(clirunner, validate_cliresult, isolated_pio_home):

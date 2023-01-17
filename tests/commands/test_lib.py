@@ -26,13 +26,13 @@ def test_search(clirunner, validate_cliresult):
     result = clirunner.invoke(cmd_lib, ["search", "DHT22"])
     validate_cliresult(result)
     match = re.search(r"Found\s+(\d+)\slibraries:", result.output)
-    assert int(match.group(1)) > 2
+    assert int(match[1]) > 2
 
     result = clirunner.invoke(cmd_lib,
                               ["search", "DHT22", "--platform=timsp430"])
     validate_cliresult(result)
     match = re.search(r"Found\s+(\d+)\slibraries:", result.output)
-    assert int(match.group(1)) > 1
+    assert int(match[1]) > 1
 
 
 def test_global_install_registry(clirunner, validate_cliresult,
@@ -139,21 +139,25 @@ def test_install_duplicates(clirunner, validate_cliresult, without_internet):
 def test_global_lib_list(clirunner, validate_cliresult):
     result = clirunner.invoke(cmd_lib, ["-g", "list"])
     validate_cliresult(result)
-    assert all([
-        n in result.output for n in
-        ("Source: https://github.com/Pedroalbuquerque/ESP32WebServer/archive/master.zip",
-         "Version: 5.10.1",
-         "Source: git+https://github.com/gioblu/PJON.git#3.0",
-         "Version: 1fb26fd")
-    ])
+    assert all(
+        n in result.output
+        for n in (
+            "Source: https://github.com/Pedroalbuquerque/ESP32WebServer/archive/master.zip",
+            "Version: 5.10.1",
+            "Source: git+https://github.com/gioblu/PJON.git#3.0",
+            "Version: 1fb26fd",
+        )
+    )
 
     result = clirunner.invoke(cmd_lib, ["-g", "list", "--json-output"])
-    assert all([
-        n in result.output for n in
-        ("__pkg_dir",
-         '"__src_url": "git+https://gitlab.com/ivankravets/rs485-nodeproto.git"',
-         '"version": "5.10.1"')
-    ])
+    assert all(
+        n in result.output
+        for n in (
+            "__pkg_dir",
+            '"__src_url": "git+https://gitlab.com/ivankravets/rs485-nodeproto.git"',
+            '"version": "5.10.1"',
+        )
+    )
     items1 = [i['name'] for i in json.loads(result.output)]
     items2 = [
         "ESP32WebServer", "ArduinoJson", "ArduinoJson", "ArduinoJson",
@@ -179,8 +183,7 @@ def test_global_lib_update_check(clirunner, validate_cliresult):
         cmd_lib, ["-g", "update", "--only-check", "--json-output"])
     validate_cliresult(result)
     output = json.loads(result.output)
-    assert set(["RFcontrol",
-                "NeoPixelBus"]) == set([l['name'] for l in output])
+    assert {"RFcontrol", "NeoPixelBus"} == {l['name'] for l in output}
 
 
 def test_global_lib_update(clirunner, validate_cliresult):
@@ -247,8 +250,7 @@ def test_global_lib_uninstall(clirunner, validate_cliresult,
 def test_lib_show(clirunner, validate_cliresult):
     result = clirunner.invoke(cmd_lib, ["show", "64"])
     validate_cliresult(result)
-    assert all(
-        [s in result.output for s in ("ArduinoJson", "Arduino", "Atmel AVR")])
+    assert all(s in result.output for s in ("ArduinoJson", "Arduino", "Atmel AVR"))
     result = clirunner.invoke(cmd_lib, ["show", "OneWire", "--json-output"])
     validate_cliresult(result)
     assert "OneWire" in result.output
@@ -264,14 +266,19 @@ def test_lib_builtin(clirunner, validate_cliresult):
 def test_lib_stats(clirunner, validate_cliresult):
     result = clirunner.invoke(cmd_lib, ["stats"])
     validate_cliresult(result)
-    assert all([
+    assert all(
         s in result.output
         for s in ("UPDATED", "POPULAR", "https://platformio.org/lib/show")
-    ])
+    )
 
     result = clirunner.invoke(cmd_lib, ["stats", "--json-output"])
     validate_cliresult(result)
-    assert set([
-        "dlweek", "added", "updated", "topkeywords", "dlmonth", "dlday",
-        "lastkeywords"
-    ]) == set(json.loads(result.output).keys())
+    assert {
+        "dlweek",
+        "added",
+        "updated",
+        "topkeywords",
+        "dlmonth",
+        "dlday",
+        "lastkeywords",
+    } == set(json.loads(result.output).keys())

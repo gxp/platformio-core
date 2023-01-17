@@ -130,9 +130,7 @@ class ProjectConfig(object):
         renamed_options = {}
         for option in ProjectOptions.values():
             if option.oldnames:
-                renamed_options.update(
-                    {name: option.name
-                     for name in option.oldnames})
+                renamed_options |= {name: option.name for name in option.oldnames}
 
         for section in self._parser.sections():
             scope = section.split(":", 1)[0]
@@ -153,10 +151,9 @@ class ProjectConfig(object):
 
                 # unknown
                 unknown_conditions = [
-                    ("%s.%s" % (scope, option)) not in ProjectOptions,
-                    scope != "env" or
-                    not option.startswith(("custom_", "board_"))
-                ]  # yapf: disable
+                    f"{scope}.{option}" not in ProjectOptions,
+                    scope != "env" or not option.startswith(("custom_", "board_")),
+                ]
                 if all(unknown_conditions):
                     self.warnings.append(
                         "Ignore unknown configuration option `%s` "
@@ -166,7 +163,7 @@ class ProjectConfig(object):
     def options(self, section=None, env=None):
         assert section or env
         if not section:
-            section = "env:" + env
+            section = f"env:{env}"
         options = self._parser.options(section)
 
         # handle global options from [env]
@@ -195,7 +192,7 @@ class ProjectConfig(object):
     def items(self, section=None, env=None, as_dict=False):
         assert section or env
         if not section:
-            section = "env:" + env
+            section = f"env:{env}"
         if as_dict:
             return {
                 option: self.get(section, option)
@@ -241,8 +238,7 @@ class ProjectConfig(object):
         except ConfigParser.Error as e:
             raise exception.InvalidProjectConf(self.path, str(e))
 
-        option_meta = ProjectOptions.get("%s.%s" %
-                                         (section.split(":", 1)[0], option))
+        option_meta = ProjectOptions.get(f'{section.split(":", 1)[0]}.{option}')
         if not option_meta:
             return value or default
 
@@ -253,7 +249,7 @@ class ProjectConfig(object):
             envvar_value = os.getenv(option_meta.sysenvvar)
             if not envvar_value and option_meta.oldnames:
                 for oldoption in option_meta.oldnames:
-                    envvar_value = os.getenv("PLATFORMIO_" + oldoption.upper())
+                    envvar_value = os.getenv(f"PLATFORMIO_{oldoption.upper()}")
                     if envvar_value:
                         break
             if envvar_value and option_meta.multiple:
@@ -296,19 +292,19 @@ class ProjectConfig(object):
         known = set(self.envs())
         if not known:
             raise exception.ProjectEnvsNotAvailable()
-        unknown = set(list(envs or []) + self.default_envs()) - known
-        if unknown:
+        if unknown := set(list(envs or []) + self.default_envs()) - known:
             raise exception.UnknownEnvNames(", ".join(unknown),
                                             ", ".join(known))
         if not silent:
             for warning in self.warnings:
-                click.secho("Warning! %s" % warning, fg="yellow")
+                click.secho(f"Warning! {warning}", fg="yellow")
         return True
 
     def to_json(self):
-        result = {}
-        for section in self.sections():
-            result[section] = self.items(section, as_dict=True)
+        result = {
+            section: self.items(section, as_dict=True)
+            for section in self.sections()
+        }
         return json.dumps(result)
 
     def save(self, path=None):

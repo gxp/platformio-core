@@ -156,7 +156,7 @@ class ProjectRPC(object):
             os.makedirs(project_dir)
         args = ["init", "--board", board]
         if framework:
-            args.extend(["--project-option", "framework = %s" % framework])
+            args.extend(["--project-option", f"framework = {framework}"])
         if (state['storage']['coreCaller'] and state['storage']['coreCaller']
                 in ProjectGenerator.get_supported_ides()):
             args.extend(["--ide", state['storage']['coreCaller']])
@@ -216,24 +216,23 @@ class ProjectRPC(object):
         if is_platformio_project(arduino_project_dir):
             return arduino_project_dir
 
-        is_arduino_project = any([
+        is_arduino_project = any(
             isfile(
-                join(arduino_project_dir,
-                     "%s.%s" % (basename(arduino_project_dir), ext)))
+                join(arduino_project_dir, f"{basename(arduino_project_dir)}.{ext}")
+            )
             for ext in ("ino", "pde")
-        ])
+        )
         if not is_arduino_project:
             raise jsonrpc.exceptions.JSONRPCDispatchException(
-                code=4000,
-                message="Not an Arduino project: %s" % arduino_project_dir)
+                code=4000, message=f"Not an Arduino project: {arduino_project_dir}"
+            )
 
         state = AppRPC.load_state()
         project_dir = join(state['storage']['projectsDir'],
                            time.strftime("%y%m%d-%H%M%S-") + board)
         if not isdir(project_dir):
             os.makedirs(project_dir)
-        args = ["init", "--board", board]
-        args.extend(["--project-option", "framework = arduino"])
+        args = ["init", "--board", board, "--project-option", "framework = arduino"]
         if use_arduino_libs:
             args.extend([
                 "--project-option",
@@ -260,8 +259,8 @@ class ProjectRPC(object):
     def import_pio(project_dir):
         if not project_dir or not is_platformio_project(project_dir):
             raise jsonrpc.exceptions.JSONRPCDispatchException(
-                code=4001,
-                message="Not an PlatformIO project: %s" % project_dir)
+                code=4001, message=f"Not an PlatformIO project: {project_dir}"
+            )
         new_project_dir = join(
             AppRPC.load_state()['storage']['projectsDir'],
             time.strftime("%y%m%d-%H%M%S-") + basename(project_dir))

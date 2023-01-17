@@ -29,126 +29,169 @@ def test_pkg_input_parser():
         ["id=13@~1.2.3", ("id=13", "~1.2.3", None)],
         [
             get_project_core_dir(),
-            (".platformio", None, "file://" + get_project_core_dir())
+            (".platformio", None, f"file://{get_project_core_dir()}"),
         ],
         [
-            "LocalName=" + get_project_core_dir(),
-            ("LocalName", None, "file://" + get_project_core_dir())
+            f"LocalName={get_project_core_dir()}",
+            ("LocalName", None, f"file://{get_project_core_dir()}"),
         ],
         [
-            "LocalName=%s@>2.3.0" % get_project_core_dir(),
-            ("LocalName", ">2.3.0", "file://" + get_project_core_dir())
+            f"LocalName={get_project_core_dir()}@>2.3.0",
+            ("LocalName", ">2.3.0", f"file://{get_project_core_dir()}"),
         ],
         [
             "https://github.com/user/package.git",
-            ("package", None, "git+https://github.com/user/package.git")
+            ("package", None, "git+https://github.com/user/package.git"),
         ],
         [
             "MyPackage=https://gitlab.com/user/package.git",
-            ("MyPackage", None, "git+https://gitlab.com/user/package.git")
+            ("MyPackage", None, "git+https://gitlab.com/user/package.git"),
         ],
         [
             "MyPackage=https://gitlab.com/user/package.git@3.2.1,!=2",
-            ("MyPackage", "3.2.1,!=2",
-             "git+https://gitlab.com/user/package.git")
+            (
+                "MyPackage",
+                "3.2.1,!=2",
+                "git+https://gitlab.com/user/package.git",
+            ),
         ],
         [
             "https://somedomain.com/path/LibraryName-1.2.3.zip",
-            ("LibraryName-1.2.3", None,
-             "https://somedomain.com/path/LibraryName-1.2.3.zip")
+            (
+                "LibraryName-1.2.3",
+                None,
+                "https://somedomain.com/path/LibraryName-1.2.3.zip",
+            ),
         ],
         [
             "https://github.com/user/package/archive/branch.zip",
-            ("branch", None,
-             "https://github.com/user/package/archive/branch.zip")
+            (
+                "branch",
+                None,
+                "https://github.com/user/package/archive/branch.zip",
+            ),
         ],
         [
             "https://github.com/user/package/archive/branch.zip@~1.2.3",
-            ("branch", "~1.2.3",
-             "https://github.com/user/package/archive/branch.zip")
+            (
+                "branch",
+                "~1.2.3",
+                "https://github.com/user/package/archive/branch.zip",
+            ),
         ],
         [
             "https://github.com/user/package/archive/branch.tar.gz",
-            ("branch.tar", None,
-             "https://github.com/user/package/archive/branch.tar.gz")
+            (
+                "branch.tar",
+                None,
+                "https://github.com/user/package/archive/branch.tar.gz",
+            ),
         ],
         [
             "https://github.com/user/package/archive/branch.tar.gz@!=5",
-            ("branch.tar", "!=5",
-             "https://github.com/user/package/archive/branch.tar.gz")
+            (
+                "branch.tar",
+                "!=5",
+                "https://github.com/user/package/archive/branch.tar.gz",
+            ),
         ],
         [
             "https://developer.mbed.org/users/user/code/package/",
-            ("package", None,
-             "hg+https://developer.mbed.org/users/user/code/package/")
+            (
+                "package",
+                None,
+                "hg+https://developer.mbed.org/users/user/code/package/",
+            ),
         ],
         [
             "https://os.mbed.com/users/user/code/package/",
-            ("package", None,
-             "hg+https://os.mbed.com/users/user/code/package/")
+            (
+                "package",
+                None,
+                "hg+https://os.mbed.com/users/user/code/package/",
+            ),
         ],
         [
             "https://github.com/user/package#v1.2.3",
-            ("package", None, "git+https://github.com/user/package#v1.2.3")
+            ("package", None, "git+https://github.com/user/package#v1.2.3"),
         ],
         [
             "https://github.com/user/package.git#branch",
-            ("package", None, "git+https://github.com/user/package.git#branch")
+            (
+                "package",
+                None,
+                "git+https://github.com/user/package.git#branch",
+            ),
         ],
         [
             "PkgName=https://github.com/user/package.git#a13d344fg56",
-            ("PkgName", None,
-             "git+https://github.com/user/package.git#a13d344fg56")
+            (
+                "PkgName",
+                None,
+                "git+https://github.com/user/package.git#a13d344fg56",
+            ),
         ],
         [
             "user/package",
-            ("package", None, "git+https://github.com/user/package")
+            ("package", None, "git+https://github.com/user/package"),
         ],
         [
             "PkgName=user/package",
-            ("PkgName", None, "git+https://github.com/user/package")
+            ("PkgName", None, "git+https://github.com/user/package"),
         ],
         [
             "PkgName=user/package#master",
-            ("PkgName", None, "git+https://github.com/user/package#master")
+            ("PkgName", None, "git+https://github.com/user/package#master"),
         ],
         [
             "git+https://github.com/user/package",
-            ("package", None, "git+https://github.com/user/package")
+            ("package", None, "git+https://github.com/user/package"),
         ],
         [
             "hg+https://example.com/user/package",
-            ("package", None, "hg+https://example.com/user/package")
+            ("package", None, "hg+https://example.com/user/package"),
         ],
         [
             "git@github.com:user/package.git",
-            ("package", None, "git+git@github.com:user/package.git")
+            ("package", None, "git+git@github.com:user/package.git"),
         ],
         [
             "git@github.com:user/package.git#v1.2.0",
-            ("package", None, "git+git@github.com:user/package.git#v1.2.0")
+            ("package", None, "git+git@github.com:user/package.git#v1.2.0"),
         ],
         [
             "LocalName=git@github.com:user/package.git#v1.2.0@~1.2.0",
-            ("LocalName", "~1.2.0",
-             "git+git@github.com:user/package.git#v1.2.0")
+            (
+                "LocalName",
+                "~1.2.0",
+                "git+git@github.com:user/package.git#v1.2.0",
+            ),
         ],
         [
             "git+ssh://git@gitlab.private-server.com/user/package#1.2.0",
-            ("package", None,
-             "git+ssh://git@gitlab.private-server.com/user/package#1.2.0")
+            (
+                "package",
+                None,
+                "git+ssh://git@gitlab.private-server.com/user/package#1.2.0",
+            ),
         ],
         [
             "git+ssh://user@gitlab.private-server.com:1234/package#1.2.0",
-            ("package", None,
-             "git+ssh://user@gitlab.private-server.com:1234/package#1.2.0")
+            (
+                "package",
+                None,
+                "git+ssh://user@gitlab.private-server.com:1234/package#1.2.0",
+            ),
         ],
         [
             "LocalName=git+ssh://user@gitlab.private-server.com:1234"
             "/package#1.2.0@!=13",
-            ("LocalName", "!=13",
-             "git+ssh://user@gitlab.private-server.com:1234/package#1.2.0")
-        ]
+            (
+                "LocalName",
+                "!=13",
+                "git+ssh://user@gitlab.private-server.com:1234/package#1.2.0",
+            ),
+        ],
     ]
     for params, result in items:
         if isinstance(params, tuple):
@@ -180,7 +223,7 @@ def test_install_packages(isolated_pio_home, tmpdir):
     for package in packages:
         tmp_dir = tmpdir.mkdir("tmp-package")
         tmp_dir.join("package.json").write(json.dumps(package))
-        pm._install_from_url(package['name'], "file://%s" % str(tmp_dir))
+        pm._install_from_url(package['name'], f"file://{str(tmp_dir)}")
         tmp_dir.remove(rec=1)
 
     assert len(pm.get_installed()) == len(packages) - 1
@@ -191,9 +234,9 @@ def test_install_packages(isolated_pio_home, tmpdir):
         'name_2@src-177cbce1f0705580d17790fda1cc2ef5',
         'name_2@src-f863b537ab00f4c7b5011fc44b120e1f'
     ]
-    assert set([
+    assert {
         p.basename for p in isolated_pio_home.join("packages").listdir()
-    ]) == set(pkg_dirnames)
+    } == set(pkg_dirnames)
 
 
 def test_get_package():

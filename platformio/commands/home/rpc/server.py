@@ -58,7 +58,7 @@ class JSONRPCServerProtocol(WebSocketServerProtocol):
     def sendJSONResponse(self, response):
         # click.echo("< %s" % response)
         if "error" in response:
-            click.secho("Error: %s" % response['error'], fg="red", err=True)
+            click.secho(f"Error: {response['error']}", fg="red", err=True)
         response = dump_json_to_unicode(response)
         if not PY2 and not is_bytes(response):
             response = response.encode("utf-8")
@@ -74,4 +74,4 @@ class JSONRPCServerFactory(WebSocketServerFactory):
         self.dispatcher = jsonrpc.Dispatcher()
 
     def addHandler(self, handler, namespace):
-        self.dispatcher.build_method_map(handler, prefix="%s." % namespace)
+        self.dispatcher.build_method_map(handler, prefix=f"{namespace}.")

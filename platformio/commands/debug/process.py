@@ -45,7 +45,7 @@ class BaseProcess(protocol.ProcessProtocol, object):
 
         def _replace(text):
             for key, value in _patterns.items():
-                pattern = "$%s" % key
+                pattern = f"${key}"
                 text = text.replace(pattern, value or "")
             return text
 

@@ -96,12 +96,11 @@ class MeasurementProtocol(TelemetryBase):
         self['av'] = __version__
 
         # gather dependent packages
-        dpdata = []
-        dpdata.append("PlatformIO/%s" % __version__)
+        dpdata = [f"PlatformIO/{__version__}"]
         if app.get_session_var("caller_id"):
-            dpdata.append("Caller/%s" % app.get_session_var("caller_id"))
+            dpdata.append(f'Caller/{app.get_session_var("caller_id")}')
         if getenv("PLATFORMIO_IDE"):
-            dpdata.append("IDE/%s" % getenv("PLATFORMIO_IDE"))
+            dpdata.append(f'IDE/{getenv("PLATFORMIO_IDE")}')
         self['an'] = " ".join(dpdata)
 
     def _prefill_custom_data(self):
@@ -120,8 +119,7 @@ class MeasurementProtocol(TelemetryBase):
 
         caller_id = str(app.get_session_var("caller_id"))
         self['cd1'] = util.get_systype()
-        self['cd2'] = "Python/%s %s" % (platform.python_version(),
-                                        platform.platform())
+        self['cd2'] = f"Python/{platform.python_version()} {platform.platform()}"
         # self['cd3'] = " ".join(_filter_args(sys.argv[1:]))
         self['cd4'] = 1 if (not util.is_ci() and
                             (caller_id or not is_container())) else 0
@@ -169,12 +167,14 @@ class MeasurementProtocol(TelemetryBase):
 
     @staticmethod
     def _ignore_hit():
-        if not app.get_setting("enable_telemetry"):
-            return True
-        if app.get_session_var("caller_id") and \
-                all(c in sys.argv for c in ("run", "idedata")):
-            return True
-        return False
+        return (
+            bool(
+                app.get_session_var("caller_id")
+                and all(c in sys.argv for c in ("run", "idedata"))
+            )
+            if app.get_setting("enable_telemetry")
+            else True
+        )
 
     def send(self, hittype):
         if self._ignore_hit():
@@ -231,7 +231,7 @@ class MPDataPusher(object):
         if need_nums <= active_nums:
             return
 
-        for i in range(need_nums - active_nums):
+        for _ in range(need_nums - active_nums):
             t = threading.Thread(target=self._worker)
             t.daemon = True
             t.start()
@@ -298,7 +298,7 @@ def on_run_environment(options, targets):
     safe_options = []
     for key, value in sorted(options.items()):
         if key in non_sensative_values:
-            safe_options.append("%s=%s" % (key, value))
+            safe_options.append(f"{key}={value}")
         else:
             safe_options.append(key)
     targets = [t.title() for t in targets or ["run"]]
@@ -346,7 +346,7 @@ def on_exception(e):
     ])
     mp = MeasurementProtocol()
     description = _cleanup_description(format_exc() if is_crash else str(e))
-    mp['exd'] = ("%s: %s" % (type(e).__name__, description))[:2048]
+    mp['exd'] = f"{type(e).__name__}: {description}"[:2048]
     mp['exf'] = 1 if is_crash else 0
     mp.send("exception")
 
@@ -356,9 +356,7 @@ def _finalize():
     timeout = 1000  # msec
     elapsed = 0
     try:
-        while elapsed < timeout:
-            if not MPDataPusher().in_wait():
-                break
+        while elapsed < timeout and MPDataPusher().in_wait():
             sleep(0.2)
             elapsed += 200
         backup_reports(MPDataPusher().get_items())

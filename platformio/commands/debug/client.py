@@ -93,8 +93,7 @@ class GDBClient(BaseProcess):  # pylint: disable=too-many-instance-attributes
         args.extend(self.args)
         if not gdb_path:
             raise exception.DebugInvalidOptions("GDB client is not configured")
-        gdb_data_dir = self._get_data_dir(gdb_path)
-        if gdb_data_dir:
+        if gdb_data_dir := self._get_data_dir(gdb_path):
             args.extend(["--data-directory", gdb_data_dir])
         args.append(patterns['PROG_PATH'])
 
@@ -132,28 +131,28 @@ class GDBClient(BaseProcess):  # pylint: disable=too-many-instance-attributes
             commands = self.debug_options['init_cmds']
         commands.extend(self.debug_options['extra_cmds'])
 
-        if not any("define pio_reset_target" in cmd for cmd in commands):
+        if all("define pio_reset_target" not in cmd for cmd in commands):
             commands = [
                 "define pio_reset_target",
                 "   echo Warning! Undefined pio_reset_target command\\n",
                 "   mon reset",
                 "end"
             ] + commands  # yapf: disable
-        if not any("define pio_reset_halt_target" in cmd for cmd in commands):
+        if all("define pio_reset_halt_target" not in cmd for cmd in commands):
             commands = [
                 "define pio_reset_halt_target",
                 "   echo Warning! Undefined pio_reset_halt_target command\\n",
                 "   mon reset halt",
                 "end"
             ] + commands  # yapf: disable
-        if not any("define pio_restart_target" in cmd for cmd in commands):
+        if all("define pio_restart_target" not in cmd for cmd in commands):
             commands += [
                 "define pio_restart_target",
                 "   pio_reset_halt_target",
                 "   $INIT_BREAK",
-                "   %s" % ("continue" if patterns['INIT_BREAK'] else "next"),
-                "end"
-            ]  # yapf: disable
+                f"""   {"continue" if patterns['INIT_BREAK'] else "next"}""",
+                "end",
+            ]
 
         banner = [
             "echo PlatformIO Unified Debugger -> http://bit.ly/pio-debug\\n",
@@ -239,8 +238,8 @@ class GDBClient(BaseProcess):  # pylint: disable=too-many-instance-attributes
         if not self.debug_options['init_break'] or self._target_is_run:
             return
         self.console_log(
-            "PlatformIO: Resume the execution to `debug_init_break = %s`" %
-            self.debug_options['init_break'])
+            f"PlatformIO: Resume the execution to `debug_init_break = {self.debug_options['init_break']}`"
+        )
         self.console_log("PlatformIO: More configuration options -> "
                          "http://bit.ly/pio-debug")
         self.transport.write(b"0-exec-continue\n" if helpers.
@@ -253,11 +252,14 @@ class GDBClient(BaseProcess):  # pylint: disable=too-many-instance-attributes
             return
         configuration = {"debug": self.debug_options, "env": self.env_options}
         exd = re.sub(r'\\(?!")', "/", json.dumps(configuration))
-        exd = re.sub(r'"(?:[a-z]\:)?((/[^"/]+)+)"',
-                     lambda m: '"%s"' % join(*m.group(1).split("/")[-2:]), exd,
-                     re.I | re.M)
+        exd = re.sub(
+            r'"(?:[a-z]\:)?((/[^"/]+)+)"',
+            lambda m: f'"{join(*m.group(1).split("/")[-2:])}"',
+            exd,
+            re.I | re.M,
+        )
         mp = MeasurementProtocol()
-        mp['exd'] = "DebugGDBPioInitError: %s" % exd
+        mp['exd'] = f"DebugGDBPioInitError: {exd}"
         mp['exf'] = 1
         mp.send("exception")
         self.transport.loseConnection()

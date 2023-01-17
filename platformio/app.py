@@ -113,8 +113,7 @@ class State(object):
             if isfile(self.path):
                 self._storage = fs.load_json(self.path)
             assert isinstance(self._storage, dict)
-        except (AssertionError, ValueError, UnicodeDecodeError,
-                exception.InvalidJSONFile):
+        except (AssertionError, ValueError, exception.InvalidJSONFile):
             self._storage = {}
         return self
 
@@ -271,14 +270,14 @@ class ContentCache(object):
         found = False
         newlines = []
         with open(self._db_path) as fp:
-            for line in fp.readlines():
+            for line in fp:
                 line = line.strip()
                 if "=" not in line:
                     continue
                 expire, path = line.split("=")
                 try:
                     if time() < int(expire) and isfile(path) and \
-                            path not in paths_for_delete:
+                                path not in paths_for_delete:
                         newlines.append(line)
                         continue
                 except ValueError:
@@ -320,7 +319,7 @@ def sanitize_setting(name, value):
             value = defdata['validator'](value)
         elif isinstance(defdata['value'], bool):
             if not isinstance(value, bool):
-                value = str(value).lower() in ("true", "yes", "y", "1")
+                value = str(value).lower() in {"true", "yes", "y", "1"}
         elif isinstance(defdata['value'], int):
             value = int(value)
     except Exception:
@@ -346,7 +345,7 @@ def delete_state_item(name):
 
 
 def get_setting(name):
-    _env_name = "PLATFORMIO_SETTING_%s" % name.upper()
+    _env_name = f"PLATFORMIO_SETTING_{name.upper()}"
     if _env_name in environ:
         return sanitize_setting(name, getenv(_env_name))
 

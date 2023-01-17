@@ -49,10 +49,11 @@ def fix_winpython_pathenv():
             envpath = u"%PATH%"
 
         paths = [envpath]
-        for path in (pythonpath, scripts, userscripts):
-            if path and path not in envpath and os.path.isdir(path):
-                paths.append(path)
-
+        paths.extend(
+            path
+            for path in (pythonpath, scripts, userscripts)
+            if path and path not in envpath and os.path.isdir(path)
+        )
         envpath = os.pathsep.join(paths)
         winreg.SetValueEx(key, "PATH", 0, winreg.REG_EXPAND_SZ, envpath)
     return True
@@ -145,12 +146,14 @@ def main():
             print("[SUCCESS]")
         except Exception as e:
             is_error = True
-            print(str(e))
+            print(e)
             print("[FAILURE]")
 
             permission_errors = ("permission denied", "not permitted")
-            if (any([m in str(e).lower() for m in permission_errors]) and
-                    not IS_WINDOWS):
+            if (
+                any(m in str(e).lower() for m in permission_errors)
+                and not IS_WINDOWS
+            ):
                 print("""
 -----------------
 Permission denied

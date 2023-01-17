@@ -56,9 +56,10 @@ def cli(dev):
             assert r['returncode'] == 0
         assert "version" in r['out']
         actual_version = r['out'].strip().split("version", 1)[1].strip()
-        click.secho("PlatformIO has been successfully upgraded to %s" %
-                    actual_version,
-                    fg="green")
+        click.secho(
+            f"PlatformIO has been successfully upgraded to {actual_version}",
+            fg="green",
+        )
         click.echo("Release notes: ", nl=False)
         click.secho("https://docs.platformio.org/en/latest/history.html",
                     fg="cyan")
@@ -136,7 +137,7 @@ def get_develop_latest_version():
         match = re.match(r"VERSION\s*=\s*\(([^\)]+)\)", line)
         if not match:
             continue
-        version = match.group(1)
+        version = match[1]
         for c in (" ", "'", '"'):
             version = version.replace(c, "")
         version = ".".join(version.split(","))

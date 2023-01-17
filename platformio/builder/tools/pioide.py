@@ -26,11 +26,7 @@ from platformio.proc import exec_command, where_is_program
 
 
 def _dump_includes(env, projenv):
-    includes = []
-
-    for item in projenv.get("CPPPATH", []):
-        includes.append(projenv.subst(item))
-
+    includes = [projenv.subst(item) for item in projenv.get("CPPPATH", [])]
     # installed libs
     for lb in env.GetLibBuilders():
         includes.extend(lb.get_include_dirs())
@@ -50,8 +46,7 @@ def _dump_includes(env, projenv):
         for g in toolchain_incglobs:
             includes.extend(glob(g))
 
-    unity_dir = get_core_package_dir("tool-unity")
-    if unity_dir:
+    if unity_dir := get_core_package_dir("tool-unity"):
         includes.append(unity_dir)
 
     includes.extend(
@@ -72,9 +67,9 @@ def _get_gcc_defines(env):
     try:
         sysenv = environ.copy()
         sysenv['PATH'] = str(env['ENV']['PATH'])
-        result = exec_command("echo | %s -dM -E -" % env.subst("$CC"),
-                              env=sysenv,
-                              shell=True)
+        result = exec_command(
+            f'echo | {env.subst("$CC")} -dM -E -', env=sysenv, shell=True
+        )
     except OSError:
         return items
     if result['returncode'] != 0:
@@ -84,18 +79,17 @@ def _get_gcc_defines(env):
         if not tokens or tokens[0] != "#define":
             continue
         if len(tokens) > 2:
-            items.append("%s=%s" % (tokens[1], tokens[2]))
+            items.append(f"{tokens[1]}={tokens[2]}")
         else:
             items.append(tokens[1])
     return items
 
 
 def _dump_defines(env):
-    defines = []
-    # global symbols
-    for item in processDefines(env.get("CPPDEFINES", [])):
-        defines.append(env.subst(item).replace('\\', ''))
-
+    defines = [
+        env.subst(item).replace('\\', '')
+        for item in processDefines(env.get("CPPDEFINES", []))
+    ]
     # special symbol for Atmel AVR MCU
     if env['PIOPLATFORM'] == "atmelavr":
         board_mcu = env.get("BOARD_MCU")
@@ -103,8 +97,10 @@ def _dump_defines(env):
             board_mcu = env.BoardConfig().get("build.mcu")
         if board_mcu:
             defines.append(
-                str("__AVR_%s__" % board_mcu.upper().replace(
-                    "ATMEGA", "ATmega").replace("ATTINY", "ATtiny")))
+                str(
+                    f'__AVR_{board_mcu.upper().replace("ATMEGA", "ATmega").replace("ATTINY", "ATtiny")}__'
+                )
+            )
 
     # built-in GCC marcos
     # if env.GetCompilerType() == "gcc":
@@ -180,10 +176,10 @@ def DumpIDEData(env, projenv):
             _new_defines.append(item)
     env_.Replace(CPPDEFINES=_new_defines)
 
-    data.update({
+    data |= {
         "cc_flags": env_.subst(LINTCCOM),
-        "cxx_flags": env_.subst(LINTCXXCOM)
-    })
+        "cxx_flags": env_.subst(LINTCXXCOM),
+    }
 
     return data
 

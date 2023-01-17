@@ -32,7 +32,7 @@ from platformio.util import pioversion_to_intstr
 SRC_HEADER_EXT = ["h", "hpp"]
 SRC_C_EXT = ["c", "cc", "cpp"]
 SRC_BUILD_EXT = SRC_C_EXT + ["S", "spp", "SPP", "sx", "s", "asm", "ASM"]
-SRC_FILTER_DEFAULT = ["+<*>", "-<.git%s>" % os.sep, "-<.svn%s>" % os.sep]
+SRC_FILTER_DEFAULT = ["+<*>", f"-<.git{os.sep}>", f"-<.svn{os.sep}>"]
 
 
 def scons_patched_match_splitext(path, suffixes=None):
@@ -122,8 +122,9 @@ def BuildProgram(env):
     _build_project_deps(env)
 
     # append into the beginning a main LD script
-    if (env.get("LDSCRIPT_PATH")
-            and not any("-Wl,-T" in f for f in env['LINKFLAGS'])):
+    if env.get("LDSCRIPT_PATH") and all(
+        "-Wl,-T" not in f for f in env['LINKFLAGS']
+    ):
         env.Prepend(LINKFLAGS=["-T", "$LDSCRIPT_PATH"])
 
     # enable "cyclic reference" for linker
@@ -188,18 +189,16 @@ def ProcessFlags(env, flags):  # pylint: disable=too-many-branches
         return
     env.Append(**env.ParseFlagsExtended(flags))
 
-    # Cancel any previous definition of name, either built in or
-    # provided with a -U option // Issue #191
-    undefines = [
-        u for u in env.get("CCFLAGS", [])
+    if undefines := [
+        u
+        for u in env.get("CCFLAGS", [])
         if isinstance(u, string_types) and u.startswith("-U")
-    ]
-    if undefines:
+    ]:
         for undef in undefines:
             env['CCFLAGS'].remove(undef)
             if undef[2:] in env['CPPDEFINES']:
                 env['CPPDEFINES'].remove(undef[2:])
-        env.Append(_CPPDEFFLAGS=" %s" % " ".join(undefines))
+        env.Append(_CPPDEFFLAGS=f' {" ".join(undefines)}')
 
 
 def ProcessUnFlags(env, flags):

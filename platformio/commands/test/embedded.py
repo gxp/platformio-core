@@ -92,7 +92,7 @@ class EmbeddedTestProcessor(TestProcessorBase):
             if isinstance(line, bytes):
                 line = line.decode("utf8")
             self.on_run_out(line)
-            if all([l in line for l in ("Tests", "Failures", "Ignored")]):
+            if all(l in line for l in ("Tests", "Failures", "Ignored")):
                 break
         ser.close()
         return not self._run_failed
@@ -104,7 +104,7 @@ class EmbeddedTestProcessor(TestProcessorBase):
         if self.env_options.get("test_port"):
             return self.env_options.get("test_port")
 
-        assert set(["platform", "board"]) & set(self.env_options.keys())
+        assert {"platform", "board"} & set(self.env_options.keys())
         p = PlatformFactory.newPlatform(self.env_options['platform'])
         board_hwids = p.board_config(self.env_options['board']).get(
             "build.hwids", [])
@@ -114,7 +114,7 @@ class EmbeddedTestProcessor(TestProcessorBase):
             for item in util.get_serialports():
                 port = item['port']
                 for hwid in board_hwids:
-                    hwid_str = ("%s:%s" % (hwid[0], hwid[1])).replace("0x", "")
+                    hwid_str = f"{hwid[0]}:{hwid[1]}".replace("0x", "")
                     if hwid_str in item['hwid']:
                         return port
 

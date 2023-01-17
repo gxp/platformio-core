@@ -27,7 +27,7 @@ MAX_SOURCES_LENGTH = 6000
 
 def long_sources_hook(env, sources):
     _sources = str(sources).replace("\\", "/")
-    if len(str(_sources)) < MAX_SOURCES_LENGTH:
+    if len(_sources) < MAX_SOURCES_LENGTH:
         return sources
 
     # fix space in paths
@@ -36,9 +36,9 @@ def long_sources_hook(env, sources):
         line = line.strip()
         if not line.endswith(".o"):
             line += ".o"
-        data.append('"%s"' % line)
+        data.append(f'"{line}"')
 
-    return '@"%s"' % _file_long_data(env, " ".join(data))
+    return f'@"{_file_long_data(env, " ".join(data))}"'
 
 
 def long_incflags_hook(env, incflags):
@@ -51,18 +51,19 @@ def long_incflags_hook(env, incflags):
     for line in _incflags.split(" -I"):
         line = line.strip()
         if not line.startswith("-I"):
-            line = "-I" + line
-        data.append('-I"%s"' % line[2:])
+            line = f"-I{line}"
+        data.append(f'-I"{line[2:]}"')
 
-    return '@"%s"' % _file_long_data(env, " ".join(data))
+    return f'@"{_file_long_data(env, " ".join(data))}"'
 
 
 def _file_long_data(env, data):
     build_dir = env.subst("$BUILD_DIR")
     if not isdir(build_dir):
         makedirs(build_dir)
-    tmp_file = join(build_dir,
-                    "longcmd-%s" % md5(hashlib_encode_data(data)).hexdigest())
+    tmp_file = join(
+        build_dir, f"longcmd-{md5(hashlib_encode_data(data)).hexdigest()}"
+    )
     if isfile(tmp_file):
         return tmp_file
     with open(tmp_file, "w") as fp:
@@ -80,10 +81,12 @@ def generate(env):
 
     env.Replace(_long_sources_hook=long_sources_hook)
     env.Replace(_long_incflags_hook=long_incflags_hook)
-    coms = {}
-    for key in ("ARCOM", "LINKCOM"):
-        coms[key] = env.get(key, "").replace(
-            "$SOURCES", "${_long_sources_hook(__env__, SOURCES)}")
+    coms = {
+        key: env.get(key, "").replace(
+            "$SOURCES", "${_long_sources_hook(__env__, SOURCES)}"
+        )
+        for key in ("ARCOM", "LINKCOM")
+    }
     for key in ("_CCCOMCOM", "ASPPCOM"):
         coms[key] = env.get(key, "").replace(
             "$_CPPINCFLAGS", "${_long_incflags_hook(__env__, _CPPINCFLAGS)}")

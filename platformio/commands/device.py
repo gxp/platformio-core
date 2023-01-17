@@ -68,29 +68,36 @@ def device_list(  # pylint: disable=too-many-branches
             for item in value:
                 click.secho(item['port'], fg="cyan")
                 click.echo("-" * len(item['port']))
-                click.echo("Hardware ID: %s" % item['hwid'])
-                click.echo("Description: %s" % item['description'])
+                click.echo(f"Hardware ID: {item['hwid']}")
+                click.echo(f"Description: {item['description']}")
                 click.echo("")
 
         if key == "logical":
             for item in value:
                 click.secho(item['path'], fg="cyan")
                 click.echo("-" * len(item['path']))
-                click.echo("Name: %s" % item['name'])
+                click.echo(f"Name: {item['name']}")
                 click.echo("")
 
         if key == "mdns":
             for item in value:
                 click.secho(item['name'], fg="cyan")
                 click.echo("-" * len(item['name']))
-                click.echo("Type: %s" % item['type'])
-                click.echo("IP: %s" % item['ip'])
-                click.echo("Port: %s" % item['port'])
+                click.echo(f"Type: {item['type']}")
+                click.echo(f"IP: {item['ip']}")
+                click.echo(f"Port: {item['port']}")
                 if item['properties']:
-                    click.echo("Properties: %s" % ("; ".join([
-                        "%s=%s" % (k, v)
-                        for k, v in item['properties'].items()
-                    ])))
+                    click.echo(
+                        (
+                            "Properties: %s"
+                            % "; ".join(
+                                [
+                                    f"{k}={v}"
+                                    for k, v in item['properties'].items()
+                                ]
+                            )
+                        )
+                    )
                 click.echo("")
 
         if single_key:
@@ -163,7 +170,7 @@ def device_monitor(**kwargs):  # pylint: disable=too-many-branches
         env_options = get_project_options(kwargs['project_dir'],
                                           kwargs['environment'])
         for k in ("port", "speed", "rts", "dtr"):
-            k2 = "monitor_%s" % k
+            k2 = f"monitor_{k}"
             if k == "speed":
                 k = "baud"
             if kwargs[k] is None and k2 in env_options:
@@ -194,7 +201,7 @@ def device_monitor(**kwargs):  # pylint: disable=too-many-branches
         else:
             sys.argv.extend([k, str(v)])
 
-    if kwargs['port'] and (set(["*", "?", "[", "]"]) & set(kwargs['port'])):
+    if kwargs['port'] and {"*", "?", "[", "]"} & set(kwargs['port']):
         for item in util.get_serial_ports():
             if fnmatch(item['port'], kwargs['port']):
                 kwargs['port'] = item['port']
@@ -213,8 +220,7 @@ def get_project_options(project_dir, environment=None):
     config = ProjectConfig.get_instance(join(project_dir, "platformio.ini"))
     config.validate(envs=[environment] if environment else None)
     if not environment:
-        default_envs = config.default_envs()
-        if default_envs:
+        if default_envs := config.default_envs():
             environment = default_envs[0]
         else:
             environment = config.envs()[0]

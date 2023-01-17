@@ -44,7 +44,7 @@ class memoized(object):
     def __init__(self, expire=0):
         expire = str(expire)
         if expire.isdigit():
-            expire = "%ss" % int((int(expire) / 1000))
+            expire = f"{int(expire) // 1000}s"
         tdmap = {"s": 1, "m": 60, "h": 3600, "d": 86400}
         assert expire.endswith(tuple(tdmap))
         self.expire = int(tdmap[expire[-1]] * int(expire[:-1]))
@@ -115,13 +115,13 @@ def get_systype():
     arch = platform.machine().lower()
     if type_ == "windows":
         arch = "amd64" if platform.architecture()[0] == "64bit" else "x86"
-    return "%s_%s" % (type_, arch) if arch else type_
+    return f"{type_}_{arch}" if arch else type_
 
 
 def pioversion_to_intstr():
     vermatch = re.match(r"^([\d\.]+)", __version__)
     assert vermatch
-    return [int(i) for i in vermatch.group(1).split(".")[:3]]
+    return [int(i) for i in vermatch[1].split(".")[:3]]
 
 
 def change_filemtime(path, mtime):
@@ -152,8 +152,10 @@ def get_serial_ports(filter_hwid=False):
 
     # fix for PySerial
     if not result and "darwin" in get_systype():
-        for p in glob("/dev/tty.*"):
-            result.append({"port": p, "description": "n/a", "hwid": "n/a"})
+        result.extend(
+            {"port": p, "description": "n/a", "hwid": "n/a"}
+            for p in glob("/dev/tty.*")
+        )
     return result
 
 
@@ -170,32 +172,24 @@ def get_logical_devices():
                  "name,VolumeName"]).get("out", "")
             devicenamere = re.compile(r"^([A-Z]{1}\:)\s*(\S+)?")
             for line in result.split("\n"):
-                match = devicenamere.match(line.strip())
-                if not match:
-                    continue
-                items.append({
-                    "path": match.group(1) + "\\",
-                    "name": match.group(2)
-                })
+                if match := devicenamere.match(line.strip()):
+                    items.append({"path": match[1] + "\\", "name": match[2]})
             return items
         except WindowsError:  # pylint: disable=undefined-variable
             pass
         # try "fsutil"
         result = exec_command(["fsutil", "fsinfo", "drives"]).get("out", "")
-        for device in re.findall(r"[A-Z]:\\", result):
-            items.append({"path": device, "name": None})
+        items.extend(
+            {"path": device, "name": None}
+            for device in re.findall(r"[A-Z]:\\", result)
+        )
         return items
 
     result = exec_command(["df"]).get("out")
     devicenamere = re.compile(r"^/.+\d+\%\s+([a-z\d\-_/]+)$", flags=re.I)
     for line in result.split("\n"):
-        match = devicenamere.match(line.strip())
-        if not match:
-            continue
-        items.append({
-            "path": match.group(1),
-            "name": os.path.basename(match.group(1))
-        })
+        if match := devicenamere.match(line.strip()):
+            items.append({"path": match[1], "name": os.path.basename(match[1])})
     return items
 
 
@@ -209,6 +203,8 @@ def get_mdns_services():
         addsitedir(contrib_pysite_dir)
         sys.path.insert(0, contrib_pysite_dir)
         import zeroconf
+
+
 
     class mDNSListener(object):
 
@@ -240,12 +236,12 @@ def get_mdns_services():
                 self._found_types.append(name)
                 zeroconf.ServiceBrowser(self._zc, name, self)
             if type_ in self._found_types:
-                s = zc.get_service_info(type_, name)
-                if s:
+                if s := zc.get_service_info(type_, name):
                     self._found_services.append(s)
 
         def get_services(self):
             return self._found_services
+
 
     items = []
     with mDNSListener() as mdns:
@@ -333,8 +329,7 @@ def _get_api_result(
             raise exception.APIRequestError(result['errors'][0]['title'])
         raise exception.APIRequestError(e)
     except ValueError:
-        raise exception.APIRequestError("Invalid response: %s" %
-                                        r.text.encode("utf-8"))
+        raise exception.APIRequestError(f'Invalid response: {r.text.encode("utf-8")}')
     finally:
         if r:
             r.close()
@@ -391,9 +386,7 @@ def _internet_on():
     for ip in PING_INTERNET_IPS:
         try:
             if os.getenv("HTTP_PROXY", os.getenv("HTTPS_PROXY")):
-                requests.get("http://%s" % ip,
-                             allow_redirects=False,
-                             timeout=timeout)
+                requests.get(f"http://{ip}", allow_redirects=False, timeout=timeout)
             else:
                 socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(
                     (ip, 80))
@@ -450,9 +443,7 @@ def print_labeled_bar(label, is_error=False, fg=None):
     terminal_width, _ = click.get_terminal_size()
     width = len(click.unstyle(label))
     half_line = "=" * int((terminal_width - width - 2) / 2)
-    click.secho("%s %s %s" % (half_line, label, half_line),
-                fg=fg,
-                err=is_error)
+    click.secho(f"{half_line} {label} {half_line}", fg=fg, err=is_error)
 
 
 def humanize_duration_time(duration):
@@ -474,5 +465,5 @@ def get_original_version(version):
     if int(raw) <= 99:
         return None
     if int(raw) <= 9999:
-        return "%s.%s" % (raw[:-2], int(raw[-2:]))
-    return "%s.%s.%s" % (raw[:-4], int(raw[-4:-2]), int(raw[-2:]))
+        return f"{raw[:-2]}.{int(raw[-2:])}"
+    return f"{raw[:-4]}.{int(raw[-4:-2])}.{int(raw[-2:])}"

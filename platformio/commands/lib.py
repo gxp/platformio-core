@@ -111,7 +111,8 @@ def cli(ctx, **options):
             storage_dir = join(libdeps_dir, env)
             ctx.meta[CTX_META_STORAGE_DIRS_KEY].append(storage_dir)
             ctx.meta[CTX_META_STORAGE_LIBDEPS_KEY][storage_dir] = config.get(
-                "env:" + env, "lib_deps", [])
+                f"env:{env}", "lib_deps", []
+            )
 
 
 @cli.command("install", short_help="Install library")
@@ -163,7 +164,7 @@ def lib_install(  # pylint: disable=too-many-arguments
                         builtin_lib_storages = get_builtin_libs()
                     if not silent or not is_builtin_lib(
                             builtin_lib_storages, library):
-                        click.secho("Warning! %s" % e, fg="yellow")
+                        click.secho(f"Warning! {e}", fg="yellow")
 
     if not save or not libraries:
         return
@@ -177,7 +178,7 @@ def lib_install(  # pylint: disable=too-many-arguments
             if project_environments and env not in project_environments:
                 continue
             config.expand_interpolations = False
-            lib_deps = config.get("env:" + env, "lib_deps", [])
+            lib_deps = config.get(f"env:{env}", "lib_deps", [])
             for library in libraries:
                 if library in lib_deps:
                     continue
@@ -188,7 +189,7 @@ def lib_install(  # pylint: disable=too-many-arguments
                     lib_deps.append("{name}@^{version}".format(**manifest))
                 except (AssertionError, ValueError):
                     lib_deps.append(library)
-            config.set("env:" + env, "lib_deps", lib_deps)
+            config.set(f"env:{env}", "lib_deps", lib_deps)
             config.save()
 
 
@@ -309,7 +310,7 @@ def lib_search(query, json_output, page, noninteractive, **filters):
 
     for key, values in filters.items():
         for value in values:
-            query.append('%s:"%s"' % (key, value))
+            query.append(f'{key}:"{value}"')
 
     result = util.get_api_result("/v2/lib/search",
                                  dict(query=" ".join(query), page=page),
@@ -406,17 +407,16 @@ def lib_show(library, json_output):
     click.echo()
 
     click.echo(
-        "Version: %s, released %s" %
-        (lib['version']['name'],
-         time.strftime("%c", util.parse_date(lib['version']['released']))))
-    click.echo("Manifest: %s" % lib['confurl'])
+        f"""Version: {lib['version']['name']}, released {time.strftime("%c", util.parse_date(lib['version']['released']))}"""
+    )
+    click.echo(f"Manifest: {lib['confurl']}")
     for key in ("homepage", "repository", "license"):
         if key not in lib or not lib[key]:
             continue
         if isinstance(lib[key], list):
-            click.echo("%s: %s" % (key.title(), ", ".join(lib[key])))
+            click.echo(f'{key.title()}: {", ".join(lib[key])}')
         else:
-            click.echo("%s: %s" % (key.title(), lib[key]))
+            click.echo(f"{key.title()}: {lib[key]}")
 
     blocks = []
 
@@ -427,7 +427,7 @@ def lib_show(library, json_output):
             if not author[key]:
                 continue
             if key == "email":
-                _data.append("<%s>" % author[key])
+                _data.append(f"<{author[key]}>")
             elif key == "maintainer":
                 _data.append("(maintainer)")
             else:
@@ -437,23 +437,32 @@ def lib_show(library, json_output):
         blocks.append(("Authors", _authors))
 
     blocks.append(("Keywords", lib['keywords']))
-    for key in ("frameworks", "platforms"):
-        if key not in lib or not lib[key]:
-            continue
-        blocks.append(("Compatible %s" % key, [i['title'] for i in lib[key]]))
-    blocks.append(("Headers", lib['headers']))
-    blocks.append(("Examples", lib['examples']))
-    blocks.append(("Versions", [
-        "%s, released %s" %
-        (v['name'], time.strftime("%c", util.parse_date(v['released'])))
-        for v in lib['versions']
-    ]))
-    blocks.append(("Unique Downloads", [
-        "Today: %s" % lib['dlstats']['day'],
-        "Week: %s" % lib['dlstats']['week'],
-        "Month: %s" % lib['dlstats']['month']
-    ]))
-
+    blocks.extend(
+        (f"Compatible {key}", [i['title'] for i in lib[key]])
+        for key in ("frameworks", "platforms")
+        if key in lib and lib[key]
+    )
+    blocks.extend(
+        (
+            ("Headers", lib['headers']),
+            ("Examples", lib['examples']),
+            (
+                "Versions",
+                [
+                    f"""{v['name']}, released {time.strftime("%c", util.parse_date(v['released']))}"""
+                    for v in lib['versions']
+                ],
+            ),
+            (
+                "Unique Downloads",
+                [
+                    f"Today: {lib['dlstats']['day']}",
+                    f"Week: {lib['dlstats']['week']}",
+                    f"Month: {lib['dlstats']['month']}",
+                ],
+            ),
+        )
+    )
     for (title, rows) in blocks:
         click.echo()
         click.secho(title, bold=True)
@@ -488,24 +497,36 @@ def lib_stats(json_output):
         return click.echo(dump_json_to_unicode(result))
 
     for key in ("updated", "added"):
-        tabular_data = [(click.style(item['name'], fg="cyan"),
-                         time.strftime("%c", util.parse_date(item['date'])),
-                         "https://platformio.org/lib/show/%s/%s" %
-                         (item['id'], quote(item['name'])))
-                        for item in result.get(key, [])]
-        table = tabulate(tabular_data,
-                         headers=[
-                             click.style("RECENTLY " + key.upper(), bold=True),
-                             "Date", "URL"
-                         ])
+        tabular_data = [
+            (
+                click.style(item['name'], fg="cyan"),
+                time.strftime("%c", util.parse_date(item['date'])),
+                f"https://platformio.org/lib/show/{item['id']}/{quote(item['name'])}",
+            )
+            for item in result.get(key, [])
+        ]
+        table = tabulate(
+            tabular_data,
+            headers=[
+                click.style(f"RECENTLY {key.upper()}", bold=True),
+                "Date",
+                "URL",
+            ],
+        )
         click.echo(table)
         click.echo()
 
     for key in ("lastkeywords", "topkeywords"):
-        tabular_data = [(click.style(name, fg="cyan"),
-                         "https://platformio.org/lib/search?query=" +
-                         quote("keyword:%s" % name))
-                        for name in result.get(key, [])]
+        tabular_data = [
+            (
+                click.style(name, fg="cyan"),
+                (
+                    "https://platformio.org/lib/search?query="
+                    + quote(f"keyword:{name}")
+                ),
+            )
+            for name in result.get(key, [])
+        ]
         table = tabulate(
             tabular_data,
             headers=[
@@ -519,15 +540,20 @@ def lib_stats(json_output):
 
     for key, title in (("dlday", "Today"), ("dlweek", "Week"), ("dlmonth",
                                                                 "Month")):
-        tabular_data = [(click.style(item['name'], fg="cyan"),
-                         "https://platformio.org/lib/show/%s/%s" %
-                         (item['id'], quote(item['name'])))
-                        for item in result.get(key, [])]
-        table = tabulate(tabular_data,
-                         headers=[
-                             click.style("FEATURED: " + title.upper(),
-                                         bold=True), "URL"
-                         ])
+        tabular_data = [
+            (
+                click.style(item['name'], fg="cyan"),
+                f"https://platformio.org/lib/show/{item['id']}/{quote(item['name'])}",
+            )
+            for item in result.get(key, [])
+        ]
+        table = tabulate(
+            tabular_data,
+            headers=[
+                click.style(f"FEATURED: {title.upper()}", bold=True),
+                "URL",
+            ],
+        )
         click.echo(table)
         click.echo()
 
@@ -555,9 +581,9 @@ def print_lib_item(item):
         if key not in item or not item[key]:
             continue
         if isinstance(item[key], list):
-            click.echo("%s: %s" % (key.title(), ", ".join(item[key])))
+            click.echo(f'{key.title()}: {", ".join(item[key])}')
         else:
-            click.echo("%s: %s" % (key.title(), item[key]))
+            click.echo(f"{key.title()}: {item[key]}")
 
     for key in ("frameworks", "platforms"):
         if key not in item:
@@ -571,5 +597,5 @@ def print_lib_item(item):
                      [a.get("name", "") for a in item.get("authors", [])])))
 
     if "__src_url" in item:
-        click.secho("Source: %s" % item['__src_url'])
+        click.secho(f"Source: {item['__src_url']}")
     click.echo()

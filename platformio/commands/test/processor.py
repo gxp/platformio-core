@@ -65,8 +65,8 @@ TRANSPORT_OPTIONS = {
     }
 }
 
-CTX_META_TEST_IS_RUNNING = __name__ + ".test_running"
-CTX_META_TEST_RUNNING_NAME = __name__ + ".test_running_name"
+CTX_META_TEST_IS_RUNNING = f"{__name__}.test_running"
+CTX_META_TEST_RUNNING_NAME = f"{__name__}.test_running_name"
 
 
 class TestProcessorBase(object):
@@ -93,7 +93,8 @@ class TestProcessorBase(object):
             transport = self.env_options['test_transport']
         if transport not in TRANSPORT_OPTIONS:
             raise exception.PlatformioException(
-                "Unknown Unit Test transport `%s`" % transport)
+                f"Unknown Unit Test transport `{transport}`"
+            )
         return transport.lower()
 
     def get_baudrate(self):

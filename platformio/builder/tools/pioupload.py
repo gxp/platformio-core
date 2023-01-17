@@ -99,15 +99,13 @@ def AutodetectUploadPort(*args, **kwargs):
     def _get_pattern():
         if "UPLOAD_PORT" not in env:
             return None
-        if set(["*", "?", "[", "]"]) & set(env['UPLOAD_PORT']):
+        if {"*", "?", "[", "]"} & set(env['UPLOAD_PORT']):
             return env['UPLOAD_PORT']
         return None
 
     def _is_match_pattern(port):
         pattern = _get_pattern()
-        if not pattern:
-            return True
-        return fnmatch(port, pattern)
+        return fnmatch(port, pattern) if pattern else True
 
     def _look_for_mbed_disk():
         msdlabels = ("mbed", "nucleo", "frdm", "microbit")
@@ -141,7 +139,7 @@ def AutodetectUploadPort(*args, **kwargs):
                 if "GDB" in item['description']:
                     return port
             for hwid in board_hwids:
-                hwid_str = ("%s:%s" % (hwid[0], hwid[1])).replace("0x", "")
+                hwid_str = f"{hwid[0]}:{hwid[1]}".replace("0x", "")
                 if hwid_str in item['hwid']:
                     return port
         return port
@@ -176,11 +174,10 @@ def UploadToDisk(_, target, source, env):
     assert "UPLOAD_PORT" in env
     progname = env.subst("$PROGNAME")
     for ext in ("bin", "hex"):
-        fpath = join(env.subst("$BUILD_DIR"), "%s.%s" % (progname, ext))
+        fpath = join(env.subst("$BUILD_DIR"), f"{progname}.{ext}")
         if not isfile(fpath):
             continue
-        copyfile(fpath,
-                 join(env.subst("$UPLOAD_PORT"), "%s.%s" % (progname, ext)))
+        copyfile(fpath, join(env.subst("$UPLOAD_PORT"), f"{progname}.{ext}"))
     print("Firmware has been successfully uploaded.\n"
           "(Some boards may require manual hard reset)")
 
@@ -212,9 +209,7 @@ def CheckUploadSize(_, target, source, env):
         sysenv = environ.copy()
         sysenv['PATH'] = str(env['ENV']['PATH'])
         result = exec_command(env.subst(cmd), env=sysenv)
-        if result['returncode'] != 0:
-            return None
-        return result['out'].strip()
+        return None if result['returncode'] != 0 else result['out'].strip()
 
     def _calculate_size(output, pattern):
         if not output or not pattern:
@@ -235,8 +230,7 @@ def CheckUploadSize(_, target, source, env):
         percent_raw = float(value) / float(total)
         blocks_per_progress = 10
         used_blocks = int(round(blocks_per_progress * percent_raw))
-        if used_blocks > blocks_per_progress:
-            used_blocks = blocks_per_progress
+        used_blocks = min(used_blocks, blocks_per_progress)
         return "[{:{}}] {: 6.1%} (used {:d} bytes from {:d} bytes)".format(
             "=" * used_blocks, blocks_per_progress, percent_raw, value, total)
 
@@ -248,10 +242,9 @@ def CheckUploadSize(_, target, source, env):
 
     print("Memory Usage -> http://bit.ly/pio-memory-usage")
     if data_max_size and data_size > -1:
-        print("DATA:    %s" % _format_availale_bytes(data_size, data_max_size))
+        print(f"DATA:    {_format_availale_bytes(data_size, data_max_size)}")
     if program_size > -1:
-        print("PROGRAM: %s" %
-              _format_availale_bytes(program_size, program_max_size))
+        print(f"PROGRAM: {_format_availale_bytes(program_size, program_max_size)}")
     if int(ARGUMENTS.get("PIOVERBOSE", 0)):
         print(output)
 
@@ -275,9 +268,9 @@ def PrintUploadInfo(env):
         available.extend(env.BoardConfig().get("upload",
                                                {}).get("protocols", []))
     if available:
-        print("AVAILABLE: %s" % ", ".join(sorted(set(available))))
+        print(f'AVAILABLE: {", ".join(sorted(set(available)))}')
     if configured:
-        print("CURRENT: upload_protocol = %s" % configured)
+        print(f"CURRENT: upload_protocol = {configured}")
 
 
 def exists(_):
